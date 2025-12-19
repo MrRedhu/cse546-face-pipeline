@@ -11,7 +11,7 @@ and returns plaintext: `filename:prediction`.
 
 ## How to run (high-level)
 1) Provision the AWS resources above in your own account.
-2) Set env vars (see `.env.example`).
+2) Set env vars (see `.env.example` at repo root).
 3) Run the server on an EC2 instance (or locally if you mock AWS calls).
 
 ## Notes

@@ -13,7 +13,7 @@
 
 ## How to run (high-level)
 1) Provision buckets + queues in your account (and any required EC2 roles/security groups).
-2) Set env vars (see `.env.example`).
+2) Set env vars (see `.env.example` at repo root).
 3) Start web tier.
 4) Start controller.
 5) Start app-tier instances (controller may launch/terminate them depending on your implementation).

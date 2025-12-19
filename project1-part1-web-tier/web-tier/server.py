@@ -12,8 +12,8 @@ from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 # --------------------- CONFIG ---------------------
-ASU_ID = "1224308891"       
-REGION = "us-east-1"
+ASU_ID = os.environ.get("ASU_ID", "").strip()
+REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
 PORT = int(os.environ.get("PORT", "8000"))
 BUCKET_NAME = f"{ASU_ID}-in-bucket"
 SDB_DOMAIN  = f"{ASU_ID}-simpleDB"
@@ -149,8 +149,8 @@ class Handler(BaseHTTPRequestHandler):
         log.info("%s - %s", self.address_string(), fmt % args)
 
 def main():
-    if not ASU_ID or ASU_ID == "REPLACE_ME":
-        log.error("Set ASU_ID at top of server.py before running.")
+    if not ASU_ID:
+        log.error("Set ASU_ID in the environment before running.")
         sys.exit(2)
 
     addr = ("0.0.0.0", PORT)

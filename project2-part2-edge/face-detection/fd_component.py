@@ -21,22 +21,20 @@ from facenet_pytorch import MTCNN
 
 # ---------- CONFIG ----------
 
-ASU_ID = "1224308891"
+ASU_ID = os.environ.get("ASU_ID")
+if not ASU_ID:
+    raise RuntimeError("ASU_ID must be set (e.g., 1224308891)")
 
 # The MQTT topic the workload generator publishes to
 MQTT_TOPIC = f"clients/{ASU_ID}-IoTThing"
 
 # SQS request queue URL (same as Part I)
-REQUEST_QUEUE_URL = os.environ.get(
-    "REQUEST_QUEUE_URL",
-    "https://sqs.us-east-1.amazonaws.com/176087999560/1224308891-req-queue",
-)
+REQUEST_QUEUE_URL = os.environ.get("REQUEST_QUEUE_URL")
+if not REQUEST_QUEUE_URL:
+    raise RuntimeError("REQUEST_QUEUE_URL must be set")
 
 # NEW: SQS response queue URL for bonus (No-Face short-circuit)
-RESPONSE_QUEUE_URL = os.environ.get(
-    "RESPONSE_QUEUE_URL",
-    "https://sqs.us-east-1.amazonaws.com/176087999560/1224308891-resp-queue",
-)
+RESPONSE_QUEUE_URL = os.environ.get("RESPONSE_QUEUE_URL")
 
 # ---------- GLOBALS ----------
 

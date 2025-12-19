@@ -13,7 +13,7 @@ Two-stage pipeline:
 ## How to run (high-level)
 1) Build/push a Lambda container image to ECR (if using containers).
 2) Create SQS queues and wire triggers.
-3) Set env vars (see `.env.example`) and deploy.
+3) Set env vars (see `.env.example` at repo root) and deploy.
 
 ## Notes
 This repo is sanitized; no credentials are included.

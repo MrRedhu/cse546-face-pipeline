@@ -12,11 +12,8 @@ from PIL import Image
 
 sqs = boto3.client("sqs")
 
-# Get request queue URL from env with a fallback to your queue
-REQUEST_QUEUE_URL = os.environ.get(
-    "REQUEST_QUEUE_URL",
-    "https://sqs.us-east-1.amazonaws.com/176087999560/1224308891-req-queue",
-)
+# Get request queue URL from env
+REQUEST_QUEUE_URL = os.environ.get("REQUEST_QUEUE_URL")
 
 # One MTCNN instance reused across invocations
 mtcnn = MTCNN(image_size=240, margin=0, min_face_size=20)
@@ -35,6 +32,11 @@ def _extract_body(event):
 
 
 def lambda_handler(event, context):
+    if not REQUEST_QUEUE_URL:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": "REQUEST_QUEUE_URL not set in environment"}),
+        }
     try:
         body = _extract_body(event)
 
