@@ -82,3 +82,47 @@ See:
 
 Python, AWS (EC2, S3, SQS, SimpleDB, Lambda, ECR), computer vision (MTCNN, FaceNet/InceptionResnetV1), IoT/Edge (Greengrass, MQTT).
 
+
+---
+
+## Architecture (high level)
+
+### Project 1 Part 1 — EC2 Web Tier + S3 + SimpleDB
+```mermaid
+flowchart LR
+  C[Client] -->|HTTP POST / (inputFile)| W[EC2 Web Tier: server.py]
+  W --> S3[(S3 Input Bucket)]
+  W --> DB[(SimpleDB Domain)]
+  DB --> W
+  W -->|filename:prediction| C
+Project 1 Part 2 — EC2 Web/App Tiers + S3 + SQS + Controller Autoscaling
+mermaid
+Copy code
+flowchart LR
+  C[Client] -->|upload| W[Web Tier: server.py]
+  W --> S3in[(S3 Input)]
+  W --> Qreq[(SQS Request Queue)]
+  Qreq --> A[App Tier Workers: backend.py]
+  A --> S3out[(S3 Output)]
+  A --> Qresp[(SQS Response Queue)]
+  Qresp --> W
+  W -->|filename:prediction| C
+  CTRL[Controller: controller.py] -->|scale out/in| A
+Project 2 Part 1 — Lambda (Function URL) + SQS
+mermaid
+Copy code
+flowchart LR
+  C[Client] -->|Function URL| FD[Lambda: face-detection]
+  FD --> Qreq[(SQS Request Queue)]
+  Qreq --> FR[Lambda: face-recognition]
+  FR --> Qresp[(SQS Response Queue)]
+  Qresp --> C
+Project 2 Part 2 — MQTT + Greengrass + SQS + Lambda
+mermaid
+Copy code
+flowchart LR
+  I[IoT Client] -->|MQTT publish| GG[Greengrass Component: FaceDetection]
+  GG --> Qreq[(SQS Request Queue)]
+  Qreq --> FR[Lambda: face-recognition]
+  FR --> Qresp[(SQS Response Queue)]
+  Qresp --> I
