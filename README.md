@@ -126,3 +126,19 @@ flowchart LR
   Qreq --> FR[Lambda: face-recognition]
   FR --> Qresp[(SQS Response Queue)]
   Qresp --> I
+
+---
+
+## Architecture diagrams
+
+### Project 1 Part 1 — EC2 Web Tier + S3 + SimpleDB
+<img src="assets/diagrams/p1_part1.svg" width="900" alt="Project 1 Part 1 architecture">
+
+### Project 1 Part 2 — Multi-tier EC2 + SQS + Autoscaling Controller (No Lambda)
+<img src="assets/diagrams/p1_part2.svg" width="900" alt="Project 1 Part 2 architecture">
+
+### Project 2 Part 1 — Serverless Pipeline (Lambda + SQS)
+<img src="assets/diagrams/p2_part1.svg" width="900" alt="Project 2 Part 1 architecture">
+
+### Project 2 Part 2 — Edge (MQTT + Greengrass) + Cloud (SQS + Lambda)
+<img src="assets/diagrams/p2_part2.svg" width="900" alt="Project 2 Part 2 architecture">
