@@ -1,0 +1,29 @@
+# --- Secrets / credentials ---
+credentials/
+**/credentials.txt
+*.pem
+*.key
+*.crt
+.env
+.env.*
+aws-credentials*
+**/*secret*
+**/*access_key*
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- Recommended extras (GitHub sanity) ---
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.log
