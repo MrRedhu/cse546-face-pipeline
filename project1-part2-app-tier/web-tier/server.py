@@ -5,12 +5,22 @@ from flask import Flask, request, Response
 from werkzeug.utils import secure_filename
 from botocore.exceptions import ClientError
 
-ASU_ID = os.environ.get("ASU_ID", "1224308891").strip()
-REGION = "us-east-1"
-INPUT_BUCKET = f"{ASU_ID}-in-bucket"
-OUTPUT_BUCKET = f"{ASU_ID}-out-bucket"
-REQ_QUEUE_NAME = f"{ASU_ID}-req-queue"
-RESP_QUEUE_NAME = f"{ASU_ID}-resp-queue"
+ASU_ID = os.environ.get("ASU_ID", "").strip()
+REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
+INPUT_BUCKET = os.environ.get("INPUT_BUCKET", "").strip() or (
+    f"{ASU_ID}-in-bucket" if ASU_ID else ""
+)
+OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "").strip() or (
+    f"{ASU_ID}-out-bucket" if ASU_ID else ""
+)
+REQ_QUEUE_NAME = os.environ.get("REQ_QUEUE_NAME", "").strip() or (
+    f"{ASU_ID}-req-queue" if ASU_ID else ""
+)
+RESP_QUEUE_NAME = os.environ.get("RESP_QUEUE_NAME", "").strip() or (
+    f"{ASU_ID}-resp-queue" if ASU_ID else ""
+)
+REQ_QUEUE_URL = os.environ.get("REQ_QUEUE_URL", "").strip() or None
+RESP_QUEUE_URL = os.environ.get("RESP_QUEUE_URL", "").strip() or None
 REQ_QUEUE_ATTRS = {"MaximumMessageSize": "1024", "ReceiveMessageWaitTimeSeconds": "20", "VisibilityTimeout": "60"}
 RESP_QUEUE_ATTRS = {"ReceiveMessageWaitTimeSeconds": "20", "VisibilityTimeout": "60"}
 RESPONSE_TIMEOUT_SEC = 300
@@ -37,6 +47,17 @@ def get_or_create_queue(name, attrs):
     except Exception: url = sqs.get_queue_url(QueueName=name)["QueueUrl"]
     sqs.set_queue_attributes(QueueUrl=url, Attributes=attrs)
     return url
+
+def resolve_queue_url(name, attrs, override_url):
+    if override_url:
+        try:
+            sqs.set_queue_attributes(QueueUrl=override_url, Attributes=attrs)
+        except Exception:
+            pass
+        return override_url
+    if not name:
+        raise RuntimeError("Queue name or URL must be set in the environment")
+    return get_or_create_queue(name, attrs)
 
 def stem(p): import os; return os.path.splitext(os.path.basename(p))[0]
 
@@ -66,9 +87,11 @@ class Dispatcher(threading.Thread):
                 print("[dispatcher] error:", e); time.sleep(0.5)
 
 # Startup: ensure resources and dispatcher
+if not INPUT_BUCKET or not OUTPUT_BUCKET:
+    raise RuntimeError("INPUT_BUCKET and OUTPUT_BUCKET must be set (or ASU_ID)")
 ensure_bucket(INPUT_BUCKET); ensure_bucket(OUTPUT_BUCKET)
-REQ_URL = get_or_create_queue(REQ_QUEUE_NAME, REQ_QUEUE_ATTRS)
-RESP_URL = get_or_create_queue(RESP_QUEUE_NAME, RESP_QUEUE_ATTRS)
+REQ_URL = resolve_queue_url(REQ_QUEUE_NAME, REQ_QUEUE_ATTRS, REQ_QUEUE_URL)
+RESP_URL = resolve_queue_url(RESP_QUEUE_NAME, RESP_QUEUE_ATTRS, RESP_QUEUE_URL)
 DISP = Dispatcher(RESP_URL); DISP.start()
 
 @app.route("/", methods=["POST"])

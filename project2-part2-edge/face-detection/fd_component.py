@@ -24,9 +24,12 @@ from facenet_pytorch import MTCNN
 ASU_ID = os.environ.get("ASU_ID")
 if not ASU_ID:
     raise RuntimeError("ASU_ID must be set (e.g., 1224308891)")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
 
 # The MQTT topic the workload generator publishes to
-MQTT_TOPIC = f"clients/{ASU_ID}-IoTThing"
+MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "").strip() or f"clients/{ASU_ID}-IoTThing"
+if not MQTT_TOPIC:
+    raise RuntimeError("MQTT_TOPIC must be set")
 
 # SQS request queue URL (same as Part I)
 REQUEST_QUEUE_URL = os.environ.get("REQUEST_QUEUE_URL")
@@ -39,7 +42,7 @@ RESPONSE_QUEUE_URL = os.environ.get("RESPONSE_QUEUE_URL")
 # ---------- GLOBALS ----------
 
 # Use Greengrass IAM credentials; just pin region
-sqs = boto3.client("sqs", region_name="us-east-1")
+sqs = boto3.client("sqs", region_name=AWS_REGION)
 
 # Same MTCNN config as Lambda
 mtcnn = MTCNN(image_size=240, margin=0, min_face_size=20)

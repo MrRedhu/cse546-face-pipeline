@@ -15,8 +15,12 @@ from botocore.exceptions import BotoCoreError, ClientError
 ASU_ID = os.environ.get("ASU_ID", "").strip()
 REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
 PORT = int(os.environ.get("PORT", "8000"))
-BUCKET_NAME = f"{ASU_ID}-in-bucket"
-SDB_DOMAIN  = f"{ASU_ID}-simpleDB"
+INPUT_BUCKET = os.environ.get("INPUT_BUCKET", "").strip() or (
+    f"{ASU_ID}-in-bucket" if ASU_ID else ""
+)
+SDB_DOMAIN = os.environ.get("SDB_DOMAIN", "").strip() or (
+    f"{ASU_ID}-simpleDB" if ASU_ID else ""
+)
 
 # Boto3 clients (thread-safe)
 _boto_cfg = Config(region_name=REGION, retries={"max_attempts": 5, "mode": "standard"})
@@ -69,7 +73,7 @@ def s3_put_object(key: str, fileobj) -> None:
     try:
         if hasattr(fileobj, "seek"):
             fileobj.seek(0)
-        _s3.put_object(Bucket=BUCKET_NAME, Key=key, Body=fileobj)
+        _s3.put_object(Bucket=INPUT_BUCKET, Key=key, Body=fileobj)
     except (BotoCoreError, ClientError) as e:
         log.error("S3 put_object failed: %s", e)
         raise
@@ -149,14 +153,14 @@ class Handler(BaseHTTPRequestHandler):
         log.info("%s - %s", self.address_string(), fmt % args)
 
 def main():
-    if not ASU_ID:
-        log.error("Set ASU_ID in the environment before running.")
+    if not INPUT_BUCKET or not SDB_DOMAIN:
+        log.error("Set INPUT_BUCKET and SDB_DOMAIN (or ASU_ID) in the environment before running.")
         sys.exit(2)
 
     addr = ("0.0.0.0", PORT)
     httpd = ThreadingHTTPServer(addr, Handler)
     log.info("Listening on %s:%d (region=%s, bucket=%s, sdb=%s)",
-             addr[0], addr[1], REGION, BUCKET_NAME, SDB_DOMAIN)
+             addr[0], addr[1], REGION, INPUT_BUCKET, SDB_DOMAIN)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

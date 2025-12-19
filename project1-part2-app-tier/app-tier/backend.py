@@ -3,13 +3,23 @@ import os, io, json, time
 import boto3
 from botocore.exceptions import ClientError
 
-ASU_ID = os.environ.get("ASU_ID", "1224308891").strip()
+ASU_ID = os.environ.get("ASU_ID", "").strip()
 REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
 
-INPUT_BUCKET  = f"{ASU_ID}-in-bucket"
-OUTPUT_BUCKET = f"{ASU_ID}-out-bucket"
-REQ_QUEUE     = f"{ASU_ID}-req-queue"
-RESP_QUEUE    = f"{ASU_ID}-resp-queue"
+INPUT_BUCKET = os.environ.get("INPUT_BUCKET", "").strip() or (
+    f"{ASU_ID}-in-bucket" if ASU_ID else ""
+)
+OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "").strip() or (
+    f"{ASU_ID}-out-bucket" if ASU_ID else ""
+)
+REQ_QUEUE = os.environ.get("REQ_QUEUE_NAME", "").strip() or (
+    f"{ASU_ID}-req-queue" if ASU_ID else ""
+)
+RESP_QUEUE = os.environ.get("RESP_QUEUE_NAME", "").strip() or (
+    f"{ASU_ID}-resp-queue" if ASU_ID else ""
+)
+REQ_QUEUE_URL = os.environ.get("REQ_QUEUE_URL", "").strip() or None
+RESP_QUEUE_URL = os.environ.get("RESP_QUEUE_URL", "").strip() or None
 
 RECEIVE_WAIT_SECS   = int(os.environ.get("RECEIVE_WAIT_SECS", "20"))
 VISIBILITY_TIMEOUT  = int(os.environ.get("VISIBILITY_TIMEOUT", "60"))
@@ -22,8 +32,14 @@ sqs = session.client("sqs")
 ec2 = session.client("ec2")
 
 def qurl(name): return sqs.get_queue_url(QueueName=name)["QueueUrl"]
-REQ_URL  = qurl(REQ_QUEUE)
-RESP_URL = qurl(RESP_QUEUE)
+def resolve_queue_url(name, override_url):
+    if override_url:
+        return override_url
+    if not name:
+        raise RuntimeError("Queue name or URL must be set in the environment")
+    return qurl(name)
+REQ_URL  = resolve_queue_url(REQ_QUEUE, REQ_QUEUE_URL)
+RESP_URL = resolve_queue_url(RESP_QUEUE, RESP_QUEUE_URL)
 
 def get_queue_depth(q_url):
     a = sqs.get_queue_attributes(QueueUrl=q_url,
@@ -57,6 +73,8 @@ def ensure_model():
         PREDICT = predict
 
 def main():
+    if not INPUT_BUCKET or not OUTPUT_BUCKET:
+        raise RuntimeError("INPUT_BUCKET and OUTPUT_BUCKET must be set (or ASU_ID)")
     print("[backend] up; region=", REGION, "ASU_ID=", ASU_ID)
     idle_checks = 0
     while True:

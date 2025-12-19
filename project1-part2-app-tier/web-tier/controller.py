@@ -2,7 +2,10 @@
 import os, time, boto3
 ASU_ID = os.environ.get("ASU_ID", "").strip()
 REGION = os.environ.get("AWS_REGION", "us-east-1").strip() or "us-east-1"
-REQ_QUEUE_NAME = f"{ASU_ID}-req-queue"
+REQ_QUEUE_NAME = os.environ.get("REQ_QUEUE_NAME", "").strip() or (
+    f"{ASU_ID}-req-queue" if ASU_ID else ""
+)
+REQ_QUEUE_URL = os.environ.get("REQ_QUEUE_URL", "").strip() or None
 MAX_APP = 15
 NAME_PREFIX = "app-tier-instance-"
 session = boto3.Session(region_name=REGION)
@@ -27,9 +30,9 @@ def stop_n(n):
     running=ids(["running"])[:n]
     if running: ec2.stop_instances(InstanceIds=running)
 def main():
-    if not ASU_ID:
-        raise SystemExit("ASU_ID must be set in the environment")
-    req = qurl(REQ_QUEUE_NAME)
+    if not REQ_QUEUE_URL and not REQ_QUEUE_NAME:
+        raise SystemExit("REQ_QUEUE_NAME or REQ_QUEUE_URL must be set in the environment")
+    req = REQ_QUEUE_URL or qurl(REQ_QUEUE_NAME)
     print("[AS] controller up", flush=True)
 
     import math, time
